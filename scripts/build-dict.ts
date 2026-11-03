@@ -1,9 +1,13 @@
 /**
- * Builds the bundled Italian→English dictionary from a kaikki.org Wiktionary dump.
+ * Builds a bundled <language>→English dictionary from a kaikki.org Wiktionary dump.
  *
  *   curl -L -o data/kaikki-italian.jsonl.gz \
  *     https://kaikki.org/dictionary/Italian/kaikki.org-dictionary-Italian.jsonl.gz
- *   pnpm build:dict
+ *   pnpm build:dict:it
+ *
+ *   curl -L -o data/kaikki-spanish.jsonl.gz \
+ *     https://kaikki.org/dictionary/Spanish/kaikki.org-dictionary-Spanish.jsonl.gz
+ *   pnpm build:dict:es
  *
  * Output is gzipped NDJSON, one `[word, entry]` pair per line, which the
  * background script streams into IndexedDB on install.
@@ -14,14 +18,15 @@ import { createGunzip, createGzip } from 'node:zlib';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { DictionaryBuilder, type KaikkiRecord } from '../lib/dictionary';
+import { isLanguage } from '../lib/languages';
 
-const [input, output] = process.argv.slice(2);
-if (!input || !output) {
-  console.error('usage: tsx scripts/build-dict.ts <kaikki.jsonl[.gz]> <out.ndjson.gz>');
+const [lang, input, output] = process.argv.slice(2);
+if (!isLanguage(lang) || !input || !output) {
+  console.error('usage: tsx scripts/build-dict.ts <it|es> <kaikki.jsonl[.gz]> <out.ndjson.gz>');
   process.exit(1);
 }
 
-const builder = new DictionaryBuilder();
+const builder = new DictionaryBuilder(lang);
 const source = createReadStream(input);
 const lines = createInterface({ input: input.endsWith('.gz') ? source.pipe(createGunzip()) : source, crlfDelay: Infinity });
 

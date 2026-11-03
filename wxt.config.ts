@@ -9,7 +9,7 @@ export default defineConfig({
   manifestVersion: 3,
   manifest: ({ browser }) => ({
     name: 'Sottotitoli',
-    description: 'Clickable Italian subtitles with an offline Italian→English dictionary, for Plex Web.',
+    description: 'Clickable Italian and Spanish subtitles with an offline dictionary to English, for Plex Web.',
     permissions: ['storage'],
     action: { default_title: 'Sottotitoli' },
     ...(browser === 'firefox' && {

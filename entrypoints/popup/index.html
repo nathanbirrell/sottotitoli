@@ -38,7 +38,8 @@
         gap: 12px;
         margin: 8px 0;
       }
-      input[type='range'] {
+      input[type='range'],
+      select {
         width: 120px;
       }
       p {
@@ -50,12 +51,13 @@
   </head>
   <body>
     <h1>Sottotitoli</h1>
+    <label>Learning <select id="language"><option value="it">Italian</option><option value="es">Spanish</option></select></label>
     <label>Show clickable subtitles <input id="enabled" type="checkbox" /></label>
     <label>Pause when hovering subtitles <input id="pauseOnHover" type="checkbox" /></label>
     <label>Hide Plex's own subtitles <input id="hidePlexSubtitles" type="checkbox" /></label>
     <label>Text size <input id="fontSize" type="range" min="16" max="48" step="2" /></label>
     <p id="dict">Checking dictionary…</p>
-    <p>No Italian track on Plex? Drop a .srt, .vtt or .ass file onto the player.</p>
+    <p id="hint">No Italian track on Plex? Drop a .srt, .vtt or .ass file onto the player.</p>
     <script type="module" src="./main.ts"></script>
   </body>
 </html>

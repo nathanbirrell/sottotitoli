@@ -1,3 +1,5 @@
+import { LANGUAGES, type Language } from './languages';
+
 /** Where Plex Web runs: the hosted app, a server's own /web, or a local server. */
 export const PLEX_MATCHES = ['*://app.plex.tv/*', '*://*.plex.direct/*', 'http://localhost/*', 'http://127.0.0.1/*'];
 
@@ -64,17 +66,18 @@ const SUBTITLE_STREAM = 3;
 // Bitmap subtitle formats can't be turned into text.
 const IMAGE_CODECS = new Set(['pgs', 'hdmv_pgs_subtitle', 'vobsub', 'dvd_subtitle', 'dvdsub', 'dvb_subtitle']);
 
-export function isItalian(s: PlexStream): boolean {
+export function isInLanguage(s: PlexStream, lang: Language): boolean {
+  const { plexCodes, plexName } = LANGUAGES[lang];
   const code = (s.languageTag || s.languageCode || '').toLowerCase();
-  return code === 'it' || code === 'ita' || code.startsWith('it-') || /\bital/i.test(s.language ?? '');
+  return plexCodes.includes(code) || code.startsWith(`${lang}-`) || plexName.test(s.language ?? '');
 }
 
-/** Picks the best Italian text subtitle stream: selected, then non-forced, then sidecar files. */
-export function pickItalianStream(meta: PlexMetadata): PlexStream | null {
+/** Picks the best text subtitle stream in `lang`: selected, then non-forced, then sidecar files. */
+export function pickSubtitleStream(meta: PlexMetadata, lang: Language): PlexStream | null {
   const streams = (meta.Media ?? [])
     .flatMap((m) => m.Part ?? [])
     .flatMap((p) => p.Stream ?? [])
-    .filter((s) => s.streamType === SUBTITLE_STREAM && isItalian(s) && !IMAGE_CODECS.has((s.codec ?? '').toLowerCase()));
+    .filter((s) => s.streamType === SUBTITLE_STREAM && isInLanguage(s, lang) && !IMAGE_CODECS.has((s.codec ?? '').toLowerCase()));
   const score = (s: PlexStream) => (s.selected ? 4 : 0) + (s.forced ? 0 : 2) + (s.key ? 1 : 0);
   return streams.sort((a, b) => score(b) - score(a))[0] ?? null;
 }

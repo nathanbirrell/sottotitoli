@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeItem, parsePlaybackRequest, pickItalianStream, type PlexStream } from '@/lib/plex';
+import { describeItem, parsePlaybackRequest, pickSubtitleStream, type PlexStream } from '@/lib/plex';
 
 const SERVER = 'https://10-0-0-5.abc123.plex.direct:32400';
 
@@ -32,7 +32,7 @@ describe('parsePlaybackRequest', () => {
 
 const sub = (s: Partial<PlexStream>): PlexStream => ({ id: 1, streamType: 3, ...s });
 
-describe('pickItalianStream', () => {
+describe('pickSubtitleStream', () => {
   it('prefers a selected, non-forced Italian text stream', () => {
     const meta = {
       Media: [{ Part: [{ Stream: [
@@ -43,12 +43,25 @@ describe('pickItalianStream', () => {
         sub({ id: 14, languageCode: 'ita', codec: 'pgs', selected: true }),
       ] }] }],
     };
-    expect(pickItalianStream(meta)?.id).toBe(13);
+    expect(pickSubtitleStream(meta, 'it')?.id).toBe(13);
   });
 
   it('returns null when there is no Italian text stream', () => {
-    expect(pickItalianStream({ Media: [{ Part: [{ Stream: [sub({ languageCode: 'eng' })] }] }] })).toBeNull();
-    expect(pickItalianStream({})).toBeNull();
+    expect(pickSubtitleStream({ Media: [{ Part: [{ Stream: [sub({ languageCode: 'eng' })] }] }] }, 'it')).toBeNull();
+    expect(pickSubtitleStream({}, 'it')).toBeNull();
+  });
+
+  it('picks Spanish streams by code or name, ignoring Italian ones', () => {
+    const meta = {
+      Media: [{ Part: [{ Stream: [
+        sub({ id: 20, languageCode: 'ita', key: '/library/streams/20' }),
+        sub({ id: 21, languageTag: 'es-419', key: '/library/streams/21' }),
+      ] }] }],
+    };
+    expect(pickSubtitleStream(meta, 'es')?.id).toBe(21);
+    expect(pickSubtitleStream(meta, 'it')?.id).toBe(20);
+    expect(pickSubtitleStream({ Media: [{ Part: [{ Stream: [sub({ id: 22, language: 'Español' })] }] }] }, 'es')?.id).toBe(22);
+    expect(pickSubtitleStream({ Media: [{ Part: [{ Stream: [sub({ id: 23, languageCode: 'spa' })] }] }] }, 'it')).toBeNull();
   });
 
   it('describes episodes and movies', () => {
