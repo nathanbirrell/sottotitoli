@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sottotitoli</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #ffffff;
+        --fg: #1c1c1e;
+        --muted: #6e6e73;
+        --accent: #0a84ff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1c1c1e;
+          --fg: #f2f2f7;
+          --muted: #a1a1a6;
+          --accent: #64d2ff;
+        }
+      }
+      body {
+        width: 280px;
+        margin: 0;
+        padding: 14px 16px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.4 system-ui, -apple-system, sans-serif;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 16px;
+      }
+      label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 8px 0;
+      }
+      input[type='range'] {
+        width: 120px;
+      }
+      p {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Sottotitoli</h1>
+    <label>Show clickable subtitles <input id="enabled" type="checkbox" /></label>
+    <label>Pause when hovering subtitles <input id="pauseOnHover" type="checkbox" /></label>
+    <label>Hide Plex's own subtitles <input id="hidePlexSubtitles" type="checkbox" /></label>
+    <label>Text size <input id="fontSize" type="range" min="16" max="48" step="2" /></label>
+    <p id="dict">Checking dictionary…</p>
+    <p>No Italian track on Plex? Drop a .srt, .vtt or .ass file onto the player.</p>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

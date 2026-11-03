@@ -1,0 +1,26 @@
+{
+  "name": "sottotitoli",
+  "description": "Clickable Italian subtitles with an offline dictionary, for Plex Web.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "build:dict": "tsx scripts/build-dict.ts data/kaikki-italian.jsonl.gz public/dict/it-en.ndjson.gz",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "vitest": "^5.1.0",
+    "wxt": "0.21.5"
+  }
+}
