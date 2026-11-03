@@ -130,13 +130,6 @@ pnpm build:dict
 Then bump `DICT_VERSION` in [`lib/dictionary.ts`](lib/dictionary.ts) so installed copies
 re-import it.
 
-### Why Plex?
-
-The first idea was SBS On Demand, but its Italian programmes have English subtitles burned
-into the picture and no Italian text track, so there's nothing to click. RaiPlay does provide
-Italian subtitle files, but most of its video is geo-blocked outside Italy. Support for other
-players is welcome as long as they provide subtitle text in the language being learned.
-
 ## License
 
 Code: [MIT](LICENSE). Dictionary data: [Wiktionary](https://www.wiktionary.org) contributors via
