@@ -1,4 +1,5 @@
 import type { DictEntry } from './dictionary';
+import type { Language } from './languages';
 
 const DB_NAME = 'sottotitoli';
 const ENTRIES = 'entries';
@@ -6,6 +7,8 @@ const META = 'meta';
 
 export interface DictMeta {
   version: number;
+  /** Missing on imports from before Spanish support, which were all Italian. */
+  language?: Language;
   count: number;
   complete: boolean;
 }

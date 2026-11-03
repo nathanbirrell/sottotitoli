@@ -1,12 +1,14 @@
 import { defineContentScript } from 'wxt/utils/define-content-script';
-import { PAGE_MSG_SOURCE, type PageMessage, type PagePayload } from '@/lib/messages';
-import { describeItem, parsePlaybackRequest, pickItalianStream, PLEX_MATCHES, type PlaybackInfo, type PlexMetadata } from '@/lib/plex';
+import { DEFAULT_LANGUAGE, isLanguage, LANGUAGES, type Language } from '@/lib/languages';
+import { CONTENT_MSG_SOURCE, PAGE_MSG_SOURCE, type ContentMessage, type PageMessage, type PagePayload } from '@/lib/messages';
+import { describeItem, parsePlaybackRequest, pickSubtitleStream, PLEX_MATCHES, type PlaybackInfo, type PlexMetadata } from '@/lib/plex';
 
 /**
  * Runs in the page's own JS world so it can see Plex Web's network requests.
  * When playback starts it fetches the item's metadata from the media server
- * (with the token Plex Web is already using), downloads the Italian subtitle
- * stream and posts its text to the isolated content script.
+ * (with the token Plex Web is already using), downloads the subtitle stream in
+ * the language being learned and posts its text to the isolated content script.
+ * The isolated script tells it which language that is, since it can't read storage.
  */
 export default defineContentScript({
   matches: PLEX_MATCHES,
@@ -15,30 +17,36 @@ export default defineContentScript({
   main() {
     const nativeFetch = window.fetch.bind(window);
     let current: string | null = null;
+    let currentInfo: PlaybackInfo | null = null;
+    let language: Language = DEFAULT_LANGUAGE;
 
     const post = (msg: PagePayload) =>
       window.postMessage({ source: PAGE_MSG_SOURCE, ...msg } satisfies PageMessage, window.location.origin);
 
     async function load(info: PlaybackInfo, id: string) {
+      const lang = language;
+      // A newer playback or language change supersedes this load.
+      const isCurrent = () => current === id && language === lang;
       const headers: Record<string, string> = { Accept: 'application/json' };
       if (info.token) headers['X-Plex-Token'] = info.token;
       try {
         const res = await nativeFetch(`${info.origin}/library/metadata/${info.ratingKey}`, { headers });
         if (!res.ok) throw new Error(`metadata request failed (${res.status})`);
         const meta: PlexMetadata = (await res.json()).MediaContainer?.Metadata?.[0] ?? {};
-        const stream = pickItalianStream(meta);
+        const { name } = LANGUAGES[lang];
+        const stream = pickSubtitleStream(meta, lang);
         if (!stream) {
-          if (current === id) post({ type: 'status', message: `No Italian text subtitles found for ${describeItem(meta)}` });
+          if (isCurrent()) post({ type: 'status', message: `No ${name} text subtitles found for ${describeItem(meta)}` });
           return;
         }
         const subRes = await nativeFetch(`${info.origin}${stream.key ?? `/library/streams/${stream.id}`}`, { headers: { ...headers, Accept: '*/*' } });
         if (!subRes.ok) throw new Error(`subtitle download failed (${subRes.status})`);
         const text = await subRes.text();
-        if (current === id) {
-          post({ type: 'subtitles', title: describeItem(meta), label: stream.extendedDisplayTitle ?? stream.displayTitle ?? 'Italian', text });
+        if (isCurrent()) {
+          post({ type: 'subtitles', title: describeItem(meta), label: stream.extendedDisplayTitle ?? stream.displayTitle ?? name, text });
         }
       } catch (err) {
-        if (current === id) post({ type: 'status', message: `Couldn't load subtitles: ${(err as Error).message}` });
+        if (isCurrent()) post({ type: 'status', message: `Couldn't load subtitles: ${(err as Error).message}` });
       }
     }
 
@@ -52,14 +60,27 @@ export default defineContentScript({
       if (info.state === 'stopped') {
         if (current === id) {
           current = null;
+          currentInfo = null;
           post({ type: 'clear' });
         }
         return;
       }
       if (id === current) return;
       current = id;
+      currentInfo = info;
       void load(info, id);
     }
+
+    // The language setting arrives once the isolated script has read storage, and again on change.
+    window.addEventListener('message', (e: MessageEvent<ContentMessage>) => {
+      if (e.source !== window || e.data?.source !== CONTENT_MSG_SOURCE || e.data.type !== 'language') return;
+      if (!isLanguage(e.data.language) || e.data.language === language) return;
+      language = e.data.language;
+      if (current && currentInfo) {
+        post({ type: 'clear' });
+        void load(currentInfo, current);
+      }
+    });
 
     window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
       try {

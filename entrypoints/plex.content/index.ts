@@ -1,7 +1,7 @@
 import { browser } from 'wxt/browser';
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import type { LookupResult } from '@/lib/dictionary';
-import { DEFAULT_SETTINGS, PAGE_MSG_SOURCE, type PageMessage, type RuntimeMessage, type Settings } from '@/lib/messages';
+import { CONTENT_MSG_SOURCE, DEFAULT_SETTINGS, PAGE_MSG_SOURCE, type ContentMessage, type PageMessage, type RuntimeMessage, type Settings } from '@/lib/messages';
 import { PLEX_MATCHES } from '@/lib/plex';
 import { parseSubtitles } from '@/lib/subtitles';
 import { hidePlexSubtitles, showPlexSubtitles } from './hide-plex-subs';
@@ -19,10 +19,17 @@ export default defineContentScript({
       browser.runtime.sendMessage({ type: 'lookup', word } satisfies RuntimeMessage) as Promise<LookupResult>;
     const overlay = new Overlay(settings, lookup);
 
+    // Tell the MAIN-world hook which language's subtitle track to fetch.
+    const postLanguage = () =>
+      window.postMessage({ source: CONTENT_MSG_SOURCE, type: 'language', language: settings.language } satisfies ContentMessage, window.location.origin);
+    postLanguage();
+
     browser.storage.onChanged.addListener((changes, area) => {
       if (area === 'local' && changes.settings) {
+        const previous = settings.language;
         settings = { ...DEFAULT_SETTINGS, ...(changes.settings.newValue as Partial<Settings>) };
         overlay.updateSettings(settings);
+        if (settings.language !== previous) postLanguage();
       }
     });
 

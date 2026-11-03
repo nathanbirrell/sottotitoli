@@ -1,3 +1,5 @@
+import type { Language } from './languages';
+
 /**
  * One dictionary record, keyed by lowercase word.
  * `s`: senses grouped by part of speech, e.g. [["verb", ["to speak", "to talk"]]].
@@ -22,7 +24,6 @@ export interface LookupResult {
 
 /** Bump when the bundled dictionary format or contents change, to force a re-import. */
 export const DICT_VERSION = 1;
-export const DICT_PATH = '/dict/it-en.ndjson.gz';
 
 const MAX_GLOSSES_PER_POS = 6;
 const MAX_FORMS = 4;
@@ -60,6 +61,8 @@ interface Building {
 export class DictionaryBuilder {
   private words = new Map<string, Building>();
 
+  constructor(private lang: Language = 'it') {}
+
   private get(word: string): Building {
     const key = word.toLowerCase();
     let b = this.words.get(key);
@@ -71,7 +74,7 @@ export class DictionaryBuilder {
   }
 
   add(rec: KaikkiRecord): void {
-    if (rec.lang_code !== 'it' || !rec.word || !rec.pos || SKIP_POS.has(rec.pos)) return;
+    if (rec.lang_code !== this.lang || !rec.word || !rec.pos || SKIP_POS.has(rec.pos)) return;
     const word = rec.word;
 
     for (const sense of rec.senses ?? []) {
@@ -81,8 +84,10 @@ export class DictionaryBuilder {
       if (targets.length) {
         const forms = this.get(word).forms;
         for (const t of targets) {
-          if (t.word && t.word.toLowerCase() !== word.toLowerCase() && !forms.has(t.word)) {
-            forms.set(t.word, truncate(gloss));
+          // Spanish clitic forms point at e.g. "dar combined with indirect object me and direct object lo".
+          const lemma = t.word?.replace(/ combined with .*$/, '');
+          if (lemma && lemma.toLowerCase() !== word.toLowerCase() && !forms.has(lemma)) {
+            forms.set(lemma, truncate(gloss));
           }
         }
         continue;

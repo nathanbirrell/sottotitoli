@@ -1,4 +1,5 @@
 import type { DictEntry, LookupResult } from '@/lib/dictionary';
+import type { Language } from '@/lib/languages';
 import { wordReferenceUrl } from '@/lib/lemma';
 import type { Settings } from '@/lib/messages';
 import { activeText, type Cue } from '@/lib/subtitles';
@@ -155,7 +156,7 @@ export class Overlay {
 
     const result = await this.lookup(word);
     if (!target.classList.contains('active')) return; // another word was clicked meanwhile
-    this.popup.replaceChildren(...renderResult(result));
+    this.popup.replaceChildren(...renderResult(result, this.settings.language));
     this.positionPopup(target);
   }
 
@@ -184,7 +185,7 @@ function renderSenses(entry: DictEntry): HTMLElement[] {
   });
 }
 
-function renderResult(r: LookupResult): HTMLElement[] {
+function renderResult(r: LookupResult, lang: Language): HTMLElement[] {
   const out: HTMLElement[] = [el('h3', r.query)];
   if (r.loading) {
     out.push(el('div', 'The dictionary is still loading (first run only). Try again in a minute.', 'empty'));
@@ -197,7 +198,7 @@ function renderResult(r: LookupResult): HTMLElement[] {
   }
   const target = r.lemmas[0]?.word ?? r.matched ?? r.query;
   const link = el('a', `Open “${target}” in WordReference ↗`, 'wr');
-  link.href = wordReferenceUrl(target);
+  link.href = wordReferenceUrl(target, lang);
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   out.push(link);
