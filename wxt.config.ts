@@ -3,6 +3,8 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   // Not `.output`: macOS hides dot-folders in Chrome's "Load unpacked" picker.
   outDir: 'dist',
+  // The raw Wiktionary dump is only needed to rebuild public/dict.
+  zip: { excludeSources: ['data/**', 'docs/**'] },
   // MV3 on Firefox too: the Plex hook needs `world: 'MAIN'` content scripts.
   manifestVersion: 3,
   manifest: ({ browser }) => ({
